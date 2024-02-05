@@ -7,9 +7,9 @@ we don't know CS
 ## Session 2
 
 ### Flowcharts
-![iterating an array](./iterating-an-array.png)
+![iterating an array](./iterating-an-arrary.png)
 
-![bigger of two numbers](./biggerostwonumbers.png)
+![bigger of two numbers](./biggeroftwonumbers.png)
 
 ![biggest number](./biggest-number.png)
 
