@@ -250,3 +250,153 @@ console.log(enigmaMachine.encrypt('J')); // B
 console.log(enigmaMachine.encrypt('M')); // C
 console.log(enigmaMachine.encrypt('Z')); // D
 ```
+
+## The Rotors
+Let's start the rotors without the rotation. We will implement the forward and backward methods that will take a number and return the number that corresponds to the letter after passing through the rotor.
+
+```ts
+class Rotor {
+  regularAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  rotorConfig: string;
+
+  constructor(config: string) {
+    this.rotorConfig = config;
+  }
+
+  forward(index: number) {
+    const inputLetter = this.regularAlphabet[index - 1];
+    const result = this.rotorConfig.indexOf(inputLetter) + 1;
+    return result;
+  }
+
+  backward(index: number) {
+    const inputLetter = this.rotorConfig[index - 1];
+    const result = this.regularAlphabet.indexOf(inputLetter) + 1;
+    return result;
+  }
+}
+```
+
+### Testing the Rotor
+```ts
+const rotor = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ');
+console.log(rotor.forward(1)); // 21 which is U
+console.log(rotor.forward(5)); // 1 which is A
+console.log(rotor.backward(21)); // 1 which is A
+console.log(rotor.backward(1)); // 5 which is E
+```
+
+### Adding one rotor to the Enigma Machine
+
+```ts
+class EnigmaMachine {
+  plugboard: PlugBoard;
+  reflector: Reflector;
+  rotor1: Rotor;
+
+  constructor(plugboard?: PlugBoard, rotor1?: Rotor) {
+    this.plugboard = plugboard || new PlugBoard([]);
+    this.reflector = new Reflector();
+    this.rotor1 = rotor1 || 
+      new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ');
+  }
+
+  encrypt(letter: string) {
+    let encriptedLetter = this.plugboard.swap(letter);
+    
+    // get the number that corresponds to the letter
+    const number = lettersToNumbers.get(encriptedLetter) as number;
+
+    // pass the number through the rotor
+    const rotorNumber = this.rotor1.forward(number);
+
+    // pass the number through the reflector
+    const reflectedNumber = this.reflector.forward(rotorNumber);
+
+    // pass the number backward through the rotor
+    const reflectedRotorNumber = this.rotor1.backward(reflectedNumber);
+
+    // get the letter that corresponds to the reflected number
+    const reflectedRotorLetter = numbersToLetters.get(reflectedRotorNumber) as string;
+
+    // swap the reflected letter 
+    encriptedLetter = this.plugboard.swap(reflectedRotorLetter);
+
+    return encryptedLetter;
+  }
+}
+```
+
+### Testing the Enigma Machine with the plugboard, the reflector and the rotor
+```ts
+const plugboard = new PlugBoard([
+  ['A', 'B'],
+  ['C', 'D'],
+]);
+
+const rotor1 = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ');
+
+const enigmaMachine = new EnigmaMachine(plugboard, rotor1);
+
+console.log(enigmaMachine.encrypt('A')); // H
+console.log(enigmaMachine.encrypt('B')); // M
+console.log(enigmaMachine.encrypt('M')); // B
+console.log(enigmaMachine.encrypt('H')); // A
+```
+
+### Adding the rotation to the rotor
+We will add a method to the rotor that will rotate the rotor one position. We will also add a method to the Enigma Machine that will rotate the rotor when a key is pressed.
+
+```ts
+class Rotor {
+  regularAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  rotorConfig: string;
+  position: number;
+
+  constructor(config: string, position: number) {
+    this.rotorConfig = config;
+    this.position = position;
+  }
+
+  forward(index: number) {
+    const inputLetter = this.regularAlphabet[index - 1];
+    const result = this.rotorConfig.indexOf(inputLetter) + 1;
+    return result;
+  }
+
+  backward(index: number) {
+    const inputLetter = this.rotorConfig[index - 1];
+    const result = this.regularAlphabet.indexOf(inputLetter) + 1;
+    return result;
+  }
+
+  rotate() {
+    this.position = this.position === 26 ? 1 : this.position + 1;
+
+    const alphabet = this.regularAlphabet.split('');
+
+    for (let i = 0; i < position; i++) {
+      const letter = alphabet.shift();
+      if (letter) {
+        alphabet.push(letter);
+      }
+    }
+
+    this.regularAlphabet = alphabet.join('');
+
+    const rotorConfig = this.rotorConfig.split('');
+
+    for (let i = 0; i < position; i++) {
+      const letter = rotorConfig.shift();
+      if (letter) {
+        rotorConfig.push(letter);
+      }
+    }
+
+    this.rotorConfig = rotorConfig.join('');
+  }
+
+  get offset() {
+    return this.position;
+  }
+}

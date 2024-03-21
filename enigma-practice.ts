@@ -63,61 +63,23 @@ const rotorConfig3 = 'BDFHJLCPRTXVZNYEIWGAKMUSQO';
 type SwitchboardConfig = [string, string][];
 
 class Rotor {
-  rotorString: string;
-  position: number;
+  regularAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  rotorConfig: string;
 
-  constructor(rotorString: string, position?: number) {
-    this.rotorString = rotorString;
-    this.position = position || 0;
+  constructor(config: string) {
+    this.rotorConfig = config;
   }
 
   forward(index: number) {
-    let result: number;
-    if (index + this.position > 26) {
-      result = this.rotorString.indexOf(regularAlphabet[index + this.position - 26]);
-    } else {
-      result = this.rotorString.indexOf(regularAlphabet[index + this.position - 1]);
-    }
-    result = result + 1 + this.position;
-    console.log('');
-    console.log('=====================');
-    console.log('Rotor at position ' + (this.position + 1) + ' :');
-    console.log('Going forward')
-    console.log('Input Index: ' + index);
-    console.log('Input Letter: ' + numbersToLetters.get(index));
-    console.log('Output Index: ' + result);
-    console.log('Output Letter: ' + numbersToLetters.get(result));
+    const letter = this.regularAlphabet[index - 1];
+    const result = this.rotorConfig.indexOf(letter) + 1;
     return result;
   }
 
   backward(index: number) {
-    let result: number;
-
-    if (index + this.position > 26) {
-      result = regularAlphabet.indexOf(this.rotorString[index - this.position - 26]);
-    } else {
-      result = regularAlphabet.indexOf(this.rotorString[index - 1 + this.position]);
-    }
-
-    result = result + 1 + this.position;
-    console.log('');
-    console.log('=====================');
-    console.log('Rotor at position ' + (this.position + 1) + ' :');
-    console.log('Going backward')
-    console.log('Input Index: ' + index);
-    console.log('Input Letter: ' + numbersToLetters.get(index));
-    console.log('Output Index: ' + result);
-    console.log('Output Letter: ' + numbersToLetters.get(result));
-    this.position++;
+    const letter = this.rotorConfig[index - 1];
+    const result = this.regularAlphabet.indexOf(letter) + 1;
     return result;
-  }
-
-  get offset() {
-    return this.position + 1;
-  }
-
-  set offset(index: number) {
-    this.position = index - 1;
   }
 }
 
@@ -126,16 +88,17 @@ class Reflector {
   reflectorString = 'EJMZALYXVBWFCRQUONTSPIKHGD';
 
   forward(index: number) {
-    const result = this.reflectorString.indexOf(regularAlphabet[index - 1]) + 1;
+    const letter = this.reflectorString[index - 1];
+    const result = this.regularAlphabet.indexOf(letter) + 1;
     return result;
   }
-
 }
 
 class SwitchBoard {
   dictionary: Map<string, string>;
 
   constructor(config: SwitchboardConfig) {
+    //  [['A', 'B'], ['C', 'D']] --> [['A', 'B'], ['B', 'A'], ['C', 'D'], ['D', 'C']]
     const fullConfig = config.reduce((acc, [key, value]) => {
       acc.push([key, value]);
       acc.push([value, key]);
@@ -156,32 +119,52 @@ class SwitchBoard {
 class EnigmaMachine {
   switchboard: SwitchBoard;
   reflector: Reflector;
+  rotor1: Rotor;
+  rotor2: Rotor;
+  rotor3: Rotor;
 
-  constructor(switchboard?: SwitchBoard) {
+  constructor(
+    switchboard?: SwitchBoard,
+    reflector?: Reflector,
+    rotor1?: Rotor,
+    rotor2?: Rotor,
+    rotor3?: Rotor
+  ) {
     this.switchboard = switchboard || new SwitchBoard([]);
-    this.reflector = new Reflector();
+    this.reflector = reflector || new Reflector();
+    this.rotor1 = rotor1 || new Rotor(rotorConfig1);
+    this.rotor2 = rotor2 || new Rotor(rotorConfig2);
+    this.rotor3 = rotor3 || new Rotor(rotorConfig3);
   }
 
   encrypt(letter: string) {
-    let encryptedLetter = this.switchboard.swap(letter);
-    const currentIndex = lettersToNumbers.get(encryptedLetter) as number;
-    const reflectedIndex = this.reflector.forward(currentIndex);
-    const reflectedLetter = numbersToLetters.get(reflectedIndex) as string;
-    encryptedLetter = this.switchboard.swap(reflectedLetter);
-    return encryptedLetter;
+    const swappedLetter = this.switchboard.swap(letter);
+    const swappedNumber = lettersToNumbers.get(swappedLetter) as number;
+    const rotor1Number = this.rotor1.forward(swappedNumber);
+    const rotor2Number = this.rotor2.forward(rotor1Number);
+    const rotor3Number = this.rotor3.forward(rotor2Number);
+    const reflectedNumber = this.reflector.forward(rotor3Number);
+    const rotor3BackwardNumber = this.rotor3.backward(reflectedNumber);
+    const rotor2BackwardNumber = this.rotor2.backward(rotor3BackwardNumber);
+    const rotorBackwardNumber = this.rotor1.backward(rotor2BackwardNumber);
+    const returnLetter = numbersToLetters.get(rotorBackwardNumber) as string;
+    const swappedBackLetter = this.switchboard.swap(returnLetter);
+    return swappedBackLetter;
   }
-
 }
 
-const switchboard = new SwitchBoard([['A', 'B'], ['C', 'D']]);
-const enigma = new EnigmaMachine();
 
-console.log(enigma.encrypt('A'));
-console.log(enigma.encrypt('B'));
-console.log(enigma.encrypt('C'));
-console.log(enigma.encrypt('D'));
-console.log(enigma.encrypt('E'));
-console.log(enigma.encrypt('J'));
-console.log(enigma.encrypt('M'));
-console.log(enigma.encrypt('Z'));
+
+const switchboard = new SwitchBoard([['A', 'B'], ['C', 'D']]);
+const rotor1 = new Rotor(rotorConfig2);
+const rotor2 = new Rotor(rotorConfig1);
+const rotor3 = new Rotor(rotorConfig3);
+
+const reflector = new Reflector();
+const enigma = new EnigmaMachine(switchboard, reflector, rotor1, rotor2, rotor3);
+
+console.log(enigma.encrypt('A')); // N
+console.log(enigma.encrypt('B')); // H
+console.log(enigma.encrypt('R')); // A
+console.log(enigma.encrypt('G')); // B
 
