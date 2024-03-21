@@ -52,3 +52,6 @@ we don't know CS
 #### Four bits adder
 ![four bits adder](./four-bit-adder.png)
 
+## Session 5
+
+### The physics behind the processor
