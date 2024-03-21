@@ -65,21 +65,54 @@ type SwitchboardConfig = [string, string][];
 class Rotor {
   regularAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   rotorConfig: string;
+  rotatedAlphabet: string;
+  rotatedConfig: string;
+  position: number;
 
-  constructor(config: string) {
+  constructor(config: string, position = 1) {
     this.rotorConfig = config;
+    this.position = position;
+    this.rotatedAlphabet = this.regularAlphabet;
+    this.rotatedConfig = this.rotorConfig;
   }
 
   forward(index: number) {
-    const letter = this.regularAlphabet[index - 1];
-    const result = this.rotorConfig.indexOf(letter) + 1;
+    const letter = this.rotatedAlphabet[index - 1];
+    const result = this.rotatedConfig.indexOf(letter) + 1;
     return result;
   }
 
   backward(index: number) {
-    const letter = this.rotorConfig[index - 1];
-    const result = this.regularAlphabet.indexOf(letter) + 1;
+    const letter = this.rotatedConfig[index - 1];
+    const result = this.rotatedAlphabet.indexOf(letter) + 1;
     return result;
+  }
+
+  rotate() {
+    this.position = this.position === 26 ? 1 : this.position + 1;
+    const alphabetArr = this.regularAlphabet.split('');
+    const configArr = this.rotorConfig.split('');
+
+    for (let i = 1; i < this.position; i++) {
+      const letter = alphabetArr.shift();
+      const configLetter = configArr.shift() as string;
+
+      if (letter) {
+        alphabetArr.push(letter);
+        configArr.push(configLetter);
+      }
+    }
+    this.rotatedAlphabet = alphabetArr.join('');
+    this.rotatedConfig = configArr.join('');
+  }
+
+  get currentPosition() {
+    return this.position;
+  }
+
+  set currentPosition(position: number) {
+    this.position = position - 1;
+    this.rotate();
   }
 }
 
@@ -149,6 +182,17 @@ class EnigmaMachine {
     const rotorBackwardNumber = this.rotor1.backward(rotor2BackwardNumber);
     const returnLetter = numbersToLetters.get(rotorBackwardNumber) as string;
     const swappedBackLetter = this.switchboard.swap(returnLetter);
+
+
+    rotor1.rotate();
+    if (this.rotor1.currentPosition === 26) {
+      rotor2.rotate();
+    }
+
+    if (this.rotor2.currentPosition === 26 && rotor1.currentPosition === 26) {
+      rotor3.rotate();
+    }
+
     return swappedBackLetter;
   }
 }
@@ -156,15 +200,16 @@ class EnigmaMachine {
 
 
 const switchboard = new SwitchBoard([['A', 'B'], ['C', 'D']]);
-const rotor1 = new Rotor(rotorConfig2);
-const rotor2 = new Rotor(rotorConfig1);
+const rotor1 = new Rotor(rotorConfig1);
+const rotor2 = new Rotor(rotorConfig2);
 const rotor3 = new Rotor(rotorConfig3);
 
 const reflector = new Reflector();
 const enigma = new EnigmaMachine(switchboard, reflector, rotor1, rotor2, rotor3);
 
-console.log(enigma.encrypt('A')); // N
-console.log(enigma.encrypt('B')); // H
-console.log(enigma.encrypt('R')); // A
-console.log(enigma.encrypt('G')); // B
+console.log(enigma.encrypt('C'));
+console.log(enigma.encrypt('G'));
+console.log(enigma.encrypt('L'));
+console.log(enigma.encrypt('R'));
+
 
