@@ -400,3 +400,191 @@ class Rotor {
     return this.position;
   }
 }
+
+### Testing the rotor rotation
+```ts
+const rotor = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 1);
+console.log(rotor.offset); // 1
+rotor.rotate();
+console.log(rotor.offset); // 2
+rotor.rotate();
+console.log(rotor.offset); // 3
+```
+
+### Adding the rotation to the Enigma Machine
+```ts
+class EnigmaMachine {
+  plugboard: PlugBoard;
+  reflector: Reflector;
+  rotor1: Rotor;
+
+  constructor(plugboard?: PlugBoard, rotor1?: Rotor) {
+    this.plugboard = plugboard || new PlugBoard([]);
+    this.reflector = new Reflector();
+    this.rotor1 = rotor1 || 
+      new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 1);
+  }
+
+  encrypt(letter: string) {
+    let encriptedLetter = this.plugboard.swap(letter);
+    
+    // get the number that corresponds to the letter
+    const number = lettersToNumbers.get(encriptedLetter) as number;
+
+    // pass the number through the rotor
+    const rotorNumber = this.rotor1.forward(number);
+
+    // pass the number through the reflector
+    const reflectedNumber = this.reflector.forward(rotorNumber);
+
+    // pass the number backward through the rotor
+    const reflectedRotorNumber = this.rotor1.backward(reflectedNumber);
+
+    // get the letter that corresponds to the reflected number
+    const reflectedRotorLetter = numbersToLetters.get(reflectedRotorNumber) as string;
+
+    // swap the reflected letter 
+    encriptedLetter = this.plugboard.swap(reflectedRotorLetter);
+
+    // rotate the rotor
+    this.rotor1.rotate();
+
+    return encryptedLetter;
+  }
+}
+```
+
+### Testing the Enigma Machine with the plugboard, the reflector and the rotor rotation
+```ts
+const plugboard = new PlugBoard([
+  ['A', 'B'],
+  ['C', 'D'],
+]);
+
+const rotor1 = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 1);
+
+const enigmaMachine = new EnigmaMachine(plugboard, rotor1);
+
+// Each time we press a key, the rotor will rotate, giving a different result
+console.log(enigmaMachine.encrypt('A')); // H
+console.log(enigmaMachine.encrypt('A')); // K
+console.log(enigmaMachine.encrypt('A')); // D
+console.log(enigmaMachine.encrypt('A')); // W
+
+const enigmaMachine2 = new EnigmaMachine(plugboard, rotor1);
+
+// The second enigma machine has the same configuration as the first one,
+// so if we press the result of the first machine, we will get the input
+console.log(enigmaMachine2.encrypt('H')); // A
+console.log(enigmaMachine2.encrypt('K')); // A
+console.log(enigmaMachine2.encrypt('D')); // A
+console.log(enigmaMachine2.encrypt('W')); // A
+```
+
+## Putting All the rotors
+```ts
+class EnigmaMachine {
+  plugboard: PlugBoard;
+  reflector: Reflector;
+  rotor1: Rotor;
+  rotor2: Rotor;
+  rotor3: Rotor;
+
+  constructor(plugboard?: PlugBoard, rotor1?: Rotor, rotor2?: Rotor, rotor3?: Rotor) {
+    this.plugboard = plugboard || new PlugBoard([]);
+    this.reflector = new Reflector();
+    this.rotor1 = rotor1 || 
+      new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 1);
+    this.rotor2 = rotor2 || 
+      new Rotor('AJDKSIRUXBLHWTMCQGZNPYFVOE', 1);
+    this.rotor3 = rotor3 || 
+      new Rotor('BDFHJLCPRTXVZNYEIWGAKMUSQO', 1);
+  }
+
+  encrypt(letter: string) {
+    let encriptedLetter = this.plugboard.swap(letter);
+    
+    // get the number that corresponds to the letter
+    const number = lettersToNumbers.get(encriptedLetter) as number;
+
+    // pass the number through the rotor 1
+    const rotor1Number = this.rotor1.forward(number);
+
+    // pass the number through the rotor 2
+    const rotor2Number = this.rotor2.forward(rotor1Number);
+
+    // pass the number through the rotor 1
+    const rotor3Number = this.rotor3.forward(rotor3Number);
+
+    // pass the number through the reflector
+    const reflectedNumber = this.reflector.forward(rotor3Number);
+
+    // pass the number backward through the rotor 1
+    const reflectedRotor3Number = this.rotor3.backward(reflectedNumber);
+
+    // pass the number backward through the rotor 2
+    const reflectedRotor2Number = this.rotor2.backward(reflectedRotor3Number);
+
+    // pass the number backward through the rotor 3
+    const reflectedRotor1Number = this.rotor1.backward(reflectedRotor2Number);
+
+    // get the letter that corresponds to the reflected number
+    const reflectedRotorLetter = numbersToLetters.get(reflectedRotor3Number) as string;
+
+    // swap the reflected letter 
+    encriptedLetter = this.plugboard.swap(reflectedRotorLetter);
+
+    // rotate the rotors
+    
+    // the rotor 1 rotates every time a key is pressed
+    this.rotor1.rotate();
+
+    // the rotor 2 rotates every time the rotor 1 completes a full rotation
+    if (this.rotor1.offset === 1) {
+      this.rotor2.rotate();
+    }
+
+    // the rotor 3 rotates every time the rotor 2 completes a full rotation
+    if (this.rotor2.offset === 1) {
+      this.rotor3.rotate();
+    }
+
+    return encryptedLetter;
+
+  }
+}
+```
+
+### Testing the Enigma Machine with all the rotors
+```ts
+const plugboard = new PlugBoard([
+  ['A', 'B'],
+  ['C', 'D'],
+]);
+
+const rotor1 = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 1);
+const rotor2 = new Rotor('AJDKSIRUXBLHWTMCQGZNPYFVOE', 1);
+const rotor3 = new Rotor('BDFHJLCPRTXVZNYEIWGAKMUSQO', 1);
+
+const enigmaMachine = new EnigmaMachine(plugboard, rotor1, rotor2, rotor3);
+
+// Each time we press a key, the rotors will rotate, giving a different result
+console.log(enigmaMachine.encrypt('A')); // U
+console.log(enigmaMachine.encrypt('A')); // L
+console.log(enigmaMachine.encrypt('A')); // Q
+console.log(enigmaMachine.encrypt('A')); // V
+
+const enigmaMachine2 = new EnigmaMachine(plugboard, rotor1, rotor2, rotor3);
+
+// The second enigma machine has the same configuration as the first one,
+// so if we press the result of the first machine, we will get the input
+console.log(enigmaMachine2.encrypt('U')); // A
+console.log(enigmaMachine2.encrypt('L')); // A
+console.log(enigmaMachine2.encrypt('Q')); // A
+console.log(enigmaMachine2.encrypt('V')); // A
+``` 
+
+## We are done!
+
+### GJ everyone! 🎉🎉🎉
+
